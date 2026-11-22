@@ -1,0 +1,649 @@
+@baseUrl = http://localhost:5080
+# Run each named login first. Tokens are read from responses, not saved in source.
+# Replace resource IDs and concurrency tokens with values returned by GET requests.
+@tableId = BAN01
+@targetTableId = BAN02
+@categoryId = DM01
+@menuItemId = MON01
+@sizeId = KC011
+@toppingId = TP011
+@orderId = DH00000001
+@targetOrderId = DH00000002
+@itemId = CT00000001
+@userId = waiter
+@invoiceId = HD00000001
+@promotionId = KM01
+@ingredientId = NL01
+@transactionId = BD00000001
+@employeeId = EMP7
+@rowVersion = AAAAAAAAAAE=
+@targetRowVersion = AAAAAAAAAAI=
+# Report interval is [from,to) UTC; replace dates to include your payments.
+@from = 2026-11-01T00:00:00Z
+@to = 2026-12-01T00:00:00Z
+
+### Liveness (anonymous)
+GET {{baseUrl}}/api/health
+
+### Manager login (Development demo credentials only)
+# @name managerLogin
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{"username":"manager","password":"Manager@123"}
+
+### Waiter login
+# @name waiterLogin
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{"username":"waiter","password":"Waiter@123"}
+
+### Barista login
+# @name baristaLogin
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{"username":"barista","password":"Barista@123"}
+
+### Admin login
+# @name adminLogin
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{"username":"admin","password":"Admin@123"}
+
+### Cashier login
+# @name cashierLogin
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{"username":"cashier","password":"Cashier@123"}
+
+### Warehouse login
+# @name warehouseLogin
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{"username":"warehouse","password":"Warehouse@123"}
+
+### Current account
+GET {{baseUrl}}/api/auth/me
+Authorization: Bearer {{waiterLogin.response.body.$.data.token}}
+
+### Password change invalidates this token; sign in again afterwards
+POST {{baseUrl}}/api/auth/change-password
+Authorization: Bearer {{waiterLogin.response.body.$.data.token}}
+Content-Type: application/json
+
+{"currentPassword":"Waiter@123","newPassword":"Updated@123"}
+
+### Search accounts (Admin only)
+GET {{baseUrl}}/api/tai-khoan?page=1&pageSize=20&search=waiter
+Authorization: Bearer {{adminLogin.response.body.$.data.token}}
+
+### Get account
+GET {{baseUrl}}/api/tai-khoan/{{userId}}
+Authorization: Bearer {{adminLogin.response.body.$.data.token}}
+
+### Get role permissions
+GET {{baseUrl}}/api/vai-tro/VT02/quyen
+Authorization: Bearer {{adminLogin.response.body.$.data.token}}
+
+### Create account
+POST {{baseUrl}}/api/tai-khoan
+Authorization: Bearer {{adminLogin.response.body.$.data.token}}
+Content-Type: application/json
+
+{"username":"waiter2","password":"Waiter@123","fullName":"Demo Waiter 2","email":"waiter2@cafe.example","role":"Waiter","employeeId":null}
+
+### Update profile and role (invalidates old tokens)
+PUT {{baseUrl}}/api/tai-khoan/{{userId}}
+Authorization: Bearer {{adminLogin.response.body.$.data.token}}
+Content-Type: application/json
+
+{"fullName":"Demo Waiter 2","email":"waiter2@cafe.example","role":"Waiter","employeeId":null}
+
+### Lock account; use locked=false to unlock
+PATCH {{baseUrl}}/api/tai-khoan/{{userId}}/lock
+Authorization: Bearer {{adminLogin.response.body.$.data.token}}
+Content-Type: application/json
+
+{"locked":true}
+
+### Table grid
+GET {{baseUrl}}/api/ban?page=1&pageSize=100&status=Available
+Authorization: Bearer {{waiterLogin.response.body.$.data.token}}
+
+### Table with concurrency token
+GET {{baseUrl}}/api/ban/{{tableId}}
+Authorization: Bearer {{waiterLogin.response.body.$.data.token}}
+
+### Create table (Manager)
+POST {{baseUrl}}/api/ban
+Authorization: Bearer {{managerLogin.response.body.$.data.token}}
+Content-Type: application/json
+
+{"code":"T11","area":"Garden","note":"Near entrance"}
+
+### Update table area/note (table code is immutable)
+PUT {{baseUrl}}/api/ban/{{tableId}}
+Authorization: Bearer {{managerLogin.response.body.$.data.token}}
+Content-Type: application/json
+
+{"code":"{{tableId}}","area":"Garden","note":"Near entrance"}
+
+### Finish cleaning an unoccupied table
+PATCH {{baseUrl}}/api/ban/{{tableId}}/status
+Authorization: Bearer {{waiterLogin.response.body.$.data.token}}
+Content-Type: application/json
+
+{"status":"Available","rowVersion":"{{rowVersion}}"}
+
+### Disable an unoccupied table
+DELETE {{baseUrl}}/api/ban/{{tableId}}?rowVersion={{rowVersion}}
+Authorization: Bearer {{managerLogin.response.body.$.data.token}}
+
+### Transfer by table IDs
+POST {{baseUrl}}/api/ban/transfer
+Authorization: Bearer {{waiterLogin.response.body.$.data.token}}
+Content-Type: application/json
+
+{"sourceTableId":"{{tableId}}","targetTableId":"{{targetTableId}}","orderRowVersion":"{{rowVersion}}","targetTableRowVersion":"{{targetRowVersion}}"}
+
+### Merge source tables into the selected main table
+POST {{baseUrl}}/api/ban/merge
+Authorization: Bearer {{waiterLogin.response.body.$.data.token}}
+Content-Type: application/json
+
+{"targetTableId":"{{targetTableId}}","targetTableRowVersion":"{{targetTableRowVersion}}","targetActiveOrderRowVersion":"{{targetActiveOrderRowVersion}}","sources":[{"tableId":"{{tableId}}","tableRowVersion":"{{rowVersion}}","activeOrderRowVersion":"{{sourceOrderRowVersion}}"}],"targetOrderId":"{{targetOrderId}}","targetOrderRowVersion":"{{targetOrderRowVersion}}"}
+
+### Categories
+GET {{baseUrl}}/api/danh-muc?active=true&page=1&pageSize=20
+Authorization: Bearer {{waiterLogin.response.body.$.data.token}}
+
+### Category detail
+GET {{baseUrl}}/api/danh-muc/{{categoryId}}
+Authorization: Bearer {{managerLogin.response.body.$.data.token}}
+
+### Create category
+POST {{baseUrl}}/api/danh-muc
+Authorization: Bearer {{managerLogin.response.body.$.data.token}}
+Content-Type: application/json
+
+{"name":"Seasonal"}
+
+### Update category
+PUT {{baseUrl}}/api/danh-muc/{{categoryId}}
+Authorization: Bearer {{managerLogin.response.body.$.data.token}}
+Content-Type: application/json
+
+{"name":"Seasonal"}
+
+### Deactivate category
+DELETE {{baseUrl}}/api/danh-muc/{{categoryId}}
+Authorization: Bearer {{managerLogin.response.body.$.data.token}}
+
+### Sizes
+GET {{baseUrl}}/api/sizes?active=true&page=1&pageSize=20
+Authorization: Bearer {{waiterLogin.response.body.$.data.token}}
+
+### Size detail
+GET {{baseUrl}}/api/sizes/{{sizeId}}
+Authorization: Bearer {{managerLogin.response.body.$.data.token}}
+
+### Create size
+POST {{baseUrl}}/api/sizes
+Authorization: Bearer {{managerLogin.response.body.$.data.token}}
+Content-Type: application/json
+
+{"menuItemId":"{{menuItemId}}","name":"XL","priceDelta":15000}
+
+### Update a menu item's size
+PUT {{baseUrl}}/api/sizes/{{sizeId}}
+Authorization: Bearer {{managerLogin.response.body.$.data.token}}
+Content-Type: application/json
+
+{"menuItemId":"{{menuItemId}}","name":"XL","priceDelta":20000}
+
+### Deactivate size
+DELETE {{baseUrl}}/api/sizes/{{sizeId}}
+Authorization: Bearer {{managerLogin.response.body.$.data.token}}
+
+### Toppings
+GET {{baseUrl}}/api/toppings?active=true
+Authorization: Bearer {{waiterLogin.response.body.$.data.token}}
+
+### Topping detail
+GET {{baseUrl}}/api/toppings/{{toppingId}}
+Authorization: Bearer {{managerLogin.response.body.$.data.token}}
+
+### Create topping
+POST {{baseUrl}}/api/toppings
+Authorization: Bearer {{managerLogin.response.body.$.data.token}}
+Content-Type: application/json
+
+{"menuItemId":"{{menuItemId}}","name":"Extra shot","price":10000}
+
+### Update topping
+PUT {{baseUrl}}/api/toppings/{{toppingId}}
+Authorization: Bearer {{managerLogin.response.body.$.data.token}}
+Content-Type: application/json
+
+{"menuItemId":"{{menuItemId}}","name":"Extra shot","price":12000}
+
+### Deactivate topping
+DELETE {{baseUrl}}/api/toppings/{{toppingId}}
+Authorization: Bearer {{managerLogin.response.body.$.data.token}}
+
+### Ordering menu (default hides unavailable/discontinued items)
+GET {{baseUrl}}/api/mon?orderableOnly=true&page=1&pageSize=100
+Authorization: Bearer {{waiterLogin.response.body.$.data.token}}
+
+### Management menu including unavailable items
+GET {{baseUrl}}/api/mon?orderableOnly=false&status=OutOfStock
+Authorization: Bearer {{managerLogin.response.body.$.data.token}}
+
+### Menu item detail
+GET {{baseUrl}}/api/mon/{{menuItemId}}
+Authorization: Bearer {{waiterLogin.response.body.$.data.token}}
+
+### Create menu item (basePrice creates an initial M size)
+POST {{baseUrl}}/api/mon
+Authorization: Bearer {{managerLogin.response.body.$.data.token}}
+Content-Type: application/json
+
+{"categoryId":"{{categoryId}}","name":"Seasonal coffee","basePrice":40000,"status":"Available"}
+
+### Update menu item metadata
+PUT {{baseUrl}}/api/mon/{{menuItemId}}
+Authorization: Bearer {{managerLogin.response.body.$.data.token}}
+Content-Type: application/json
+
+{"categoryId":"{{categoryId}}","name":"Seasonal coffee","status":"Available"}
+
+### Barista reports temporary menu unavailability
+PATCH {{baseUrl}}/api/mon/{{menuItemId}}/status
+Authorization: Bearer {{baristaLogin.response.body.$.data.token}}
+Content-Type: application/json
+
+{"status":"OutOfStock"}
+
+### Discontinue menu item without deleting sales history
+DELETE {{baseUrl}}/api/mon/{{menuItemId}}
+Authorization: Bearer {{managerLogin.response.body.$.data.token}}
+
+### Orders
+GET {{baseUrl}}/api/don-hang?status=Confirmed&page=1&pageSize=20
+Authorization: Bearer {{waiterLogin.response.body.$.data.token}}
+
+### Order detail
+GET {{baseUrl}}/api/don-hang/{{orderId}}
+Authorization: Bearer {{waiterLogin.response.body.$.data.token}}
+
+### Create dine-in draft; omit sizeId only if item has no sizes
+POST {{baseUrl}}/api/don-hang
+Authorization: Bearer {{waiterLogin.response.body.$.data.token}}
+Content-Type: application/json
+
+{"type":"DineIn","tableId":"{{tableId}}","items":[{"menuItemId":"{{menuItemId}}","sizeId":"{{sizeId}}","quantity":2,"toppings":[{"toppingId":"{{toppingId}}","quantity":1}]}]}
+
+### Create takeaway order with one or more items
+POST {{baseUrl}}/api/don-hang
+Authorization: Bearer {{waiterLogin.response.body.$.data.token}}
+Content-Type: application/json
+
+{"type":"TakeAway","items":[{"menuItemId":"{{menuItemId}}","sizeId":"{{sizeId}}","quantity":1,"toppings":[]}]}
+
+### Add new order lines
+POST {{baseUrl}}/api/don-hang/{{orderId}}/items
+Authorization: Bearer {{waiterLogin.response.body.$.data.token}}
+Content-Type: application/json
+
+{"rowVersion":"{{rowVersion}}","items":[{"menuItemId":"{{menuItemId}}","sizeId":"{{sizeId}}","quantity":1,"toppings":[]}]}
+
+### Edit waiting line quantity
+PATCH {{baseUrl}}/api/don-hang/{{orderId}}/items/{{itemId}}
+Authorization: Bearer {{waiterLogin.response.body.$.data.token}}
+Content-Type: application/json
+
+{"quantity":3,"rowVersion":"{{rowVersion}}"}
+
+### Cancel waiting line; started lines require Manager token
+DELETE {{baseUrl}}/api/don-hang/{{orderId}}/items/{{itemId}}
+Authorization: Bearer {{waiterLogin.response.body.$.data.token}}
+Content-Type: application/json
+
+{"rowVersion":"{{rowVersion}}","reason":"Customer changed selection"}
+
+### Confirm nonempty order
+PATCH {{baseUrl}}/api/don-hang/{{orderId}}/status
+Authorization: Bearer {{waiterLogin.response.body.$.data.token}}
+Content-Type: application/json
+
+{"status":"Confirmed","rowVersion":"{{rowVersion}}"}
+
+### Cancel whole order; started lines require Manager
+DELETE {{baseUrl}}/api/don-hang/{{orderId}}
+Authorization: Bearer {{managerLogin.response.body.$.data.token}}
+Content-Type: application/json
+
+{"rowVersion":"{{rowVersion}}","reason":"Manager-approved cancellation"}
+
+### Claim an unclaimed waiting item
+PATCH {{baseUrl}}/api/don-hang/{{orderId}}/items/{{itemId}}/status
+Authorization: Bearer {{baristaLogin.response.body.$.data.token}}
+Content-Type: application/json
+
+{"status":"Preparing","rowVersion":"{{rowVersion}}"}
+
+### Complete preparation (assigned barista or Manager)
+PATCH {{baseUrl}}/api/don-hang/{{orderId}}/items/{{itemId}}/status
+Authorization: Bearer {{baristaLogin.response.body.$.data.token}}
+Content-Type: application/json
+
+{"status":"Completed","rowVersion":"{{rowVersion}}"}
+
+### Waiter acknowledges served item
+PATCH {{baseUrl}}/api/don-hang/{{orderId}}/items/{{itemId}}/status
+Authorization: Bearer {{waiterLogin.response.body.$.data.token}}
+Content-Type: application/json
+
+{"status":"Served","rowVersion":"{{rowVersion}}"}
+
+### Transfer by order ID
+POST {{baseUrl}}/api/don-hang/{{orderId}}/transfer
+Authorization: Bearer {{waiterLogin.response.body.$.data.token}}
+Content-Type: application/json
+
+{"targetTableId":"{{targetTableId}}","rowVersion":"{{rowVersion}}","targetTableRowVersion":"{{targetRowVersion}}"}
+
+### Merge by order ID
+POST {{baseUrl}}/api/don-hang/{{orderId}}/merge
+Authorization: Bearer {{waiterLogin.response.body.$.data.token}}
+Content-Type: application/json
+
+{"targetOrderId":"{{targetOrderId}}","rowVersion":"{{rowVersion}}","targetOrderRowVersion":"{{targetRowVersion}}"}
+
+### Kitchen queue (includes current owner and recent cancellations)
+GET {{baseUrl}}/api/don-hang/kitchen-queue?page=1&pageSize=100
+Authorization: Bearer {{baristaLogin.response.body.$.data.token}}
+
+### Waiter polls completed items for service notifications
+GET {{baseUrl}}/api/don-hang/kitchen-queue?status=Completed&page=1&pageSize=100
+Authorization: Bearer {{waiterLogin.response.body.$.data.token}}
+
+### Report menu shortage (optional ingredientId can be included)
+POST {{baseUrl}}/api/don-hang/shortage-reports
+Authorization: Bearer {{baristaLogin.response.body.$.data.token}}
+Content-Type: application/json
+
+{"menuItemId":"{{menuItemId}}","reason":"Ingredient unavailable"}
+
+### Poll shortage notices; optional since is an ISO 8601 DateTimeOffset
+GET {{baseUrl}}/api/don-hang/kitchen-notices?page=1&pageSize=100
+Authorization: Bearer {{waiterLogin.response.body.$.data.token}}
+
+### Error example: 404
+GET {{baseUrl}}/api/don-hang/NOTFOUND
+Authorization: Bearer {{waiterLogin.response.body.$.data.token}}
+
+### Error example: 400, invalid quantity
+PATCH {{baseUrl}}/api/don-hang/{{orderId}}/items/{{itemId}}
+Authorization: Bearer {{waiterLogin.response.body.$.data.token}}
+Content-Type: application/json
+
+{"quantity":0,"rowVersion":"{{rowVersion}}"}
+
+### Error example: 403, Waiter cannot manage accounts
+GET {{baseUrl}}/api/tai-khoan
+Authorization: Bearer {{waiterLogin.response.body.$.data.token}}
+
+### Phase 3: invoice list, optional status/search/from/to
+GET {{baseUrl}}/api/hoa-don?page=1&pageSize=20&status=Paid&from={{from}}&to={{to}}
+Authorization: Bearer {{cashierLogin.response.body.$.data.token}}
+
+### Invoice detail
+GET {{baseUrl}}/api/hoa-don/{{invoiceId}}
+Authorization: Bearer {{cashierLogin.response.body.$.data.token}}
+
+### Printable invoice receipt
+GET {{baseUrl}}/api/hoa-don/{{invoiceId}}/print
+Authorization: Bearer {{cashierLogin.response.body.$.data.token}}
+
+### Pay a Served order with actual received cash
+POST {{baseUrl}}/api/hoa-don
+Authorization: Bearer {{cashierLogin.response.body.$.data.token}}
+Content-Type: application/json
+
+{"orderId":"{{orderId}}","rowVersion":"{{rowVersion}}","promotionCode":"KM01","paymentMethod":"Cash","receivedAmount":100000}
+
+### Noncash alternative; use a different unpaid Served order and exact net total
+POST {{baseUrl}}/api/hoa-don
+Authorization: Bearer {{cashierLogin.response.body.$.data.token}}
+Content-Type: application/json
+
+{"orderId":"{{orderId}}","rowVersion":"{{rowVersion}}","paymentMethod":"BankTransfer","receivedAmount":40000}
+
+### Manager cancellation; does not reopen order or refund externally
+POST {{baseUrl}}/api/hoa-don/{{invoiceId}}/cancel
+Authorization: Bearer {{managerLogin.response.body.$.data.token}}
+Content-Type: application/json
+
+{"rowVersion":"{{rowVersion}}","reason":"Payment entered for the wrong customer"}
+
+### Search effective promotion status
+GET {{baseUrl}}/api/khuyen-mai?page=1&pageSize=20&search=welcome&status=Active
+Authorization: Bearer {{cashierLogin.response.body.$.data.token}}
+
+### Promotion detail
+GET {{baseUrl}}/api/khuyen-mai/{{promotionId}}
+Authorization: Bearer {{cashierLogin.response.body.$.data.token}}
+
+### Promotion usage history
+GET {{baseUrl}}/api/khuyen-mai/{{promotionId}}/history?page=1&pageSize=20
+Authorization: Bearer {{cashierLogin.response.body.$.data.token}}
+
+### Create promotion; replace dates for your local scenario
+POST {{baseUrl}}/api/khuyen-mai
+Authorization: Bearer {{managerLogin.response.body.$.data.token}}
+Content-Type: application/json
+
+{"code":"NOVEMBER10","name":"November discount","startAt":"2026-11-01T00:00:00Z","endAt":"2026-12-01T00:00:00Z","type":"Percentage","discountValue":10,"minOrderAmount":50000,"status":"Active"}
+
+### Replace promotion definition; old invoice money is unchanged
+PUT {{baseUrl}}/api/khuyen-mai/{{promotionId}}
+Authorization: Bearer {{managerLogin.response.body.$.data.token}}
+Content-Type: application/json
+
+{"code":"NOVEMBER10","name":"November discount","startAt":"2026-11-01T00:00:00Z","endAt":"2026-12-01T00:00:00Z","type":"FixedAmount","discountValue":20000,"minOrderAmount":50000,"status":"Active"}
+
+### Validate against an unpaid server order (payment validates again)
+POST {{baseUrl}}/api/khuyen-mai/validate
+Authorization: Bearer {{cashierLogin.response.body.$.data.token}}
+Content-Type: application/json
+
+{"orderId":"{{orderId}}","code":"KM01"}
+
+### Deactivate promotion without removing invoice references
+DELETE {{baseUrl}}/api/khuyen-mai/{{promotionId}}
+Authorization: Bearer {{managerLogin.response.body.$.data.token}}
+
+### Ingredient balances
+GET {{baseUrl}}/api/nguyen-lieu?active=true&page=1&pageSize=20
+Authorization: Bearer {{warehouseLogin.response.body.$.data.token}}
+
+### Ingredient detail (copy token after every change)
+GET {{baseUrl}}/api/nguyen-lieu/{{ingredientId}}
+Authorization: Bearer {{warehouseLogin.response.body.$.data.token}}
+
+### Create at ZERO stock; import records opening balance
+POST {{baseUrl}}/api/nguyen-lieu
+Authorization: Bearer {{warehouseLogin.response.body.$.data.token}}
+Content-Type: application/json
+
+{"code":"COFFEE2","name":"Arabica beans","unit":"kg","minQuantity":2,"expiryDate":"2027-01-31","isActive":true}
+
+### Metadata update; cannot set Quantity or change unit after movement history
+PUT {{baseUrl}}/api/nguyen-lieu/{{ingredientId}}
+Authorization: Bearer {{warehouseLogin.response.body.$.data.token}}
+Content-Type: application/json
+
+{"code":"{{ingredientId}}","name":"Arabica beans","unit":"kg","minQuantity":3,"expiryDate":"2027-01-31","isActive":true,"rowVersion":"{{rowVersion}}"}
+
+### Low stock / expired / expiring within seven UTC days (Barista may read)
+GET {{baseUrl}}/api/nguyen-lieu/warnings?page=1&pageSize=20
+Authorization: Bearer {{baristaLogin.response.body.$.data.token}}
+
+### Import positive quantity
+POST {{baseUrl}}/api/nguyen-lieu/{{ingredientId}}/import
+Authorization: Bearer {{warehouseLogin.response.body.$.data.token}}
+Content-Type: application/json
+
+{"quantity":10,"reason":"Opening balance","rowVersion":"{{rowVersion}}"}
+
+### Export positive quantity, not exceeding balance; payment does not auto-consume stock
+POST {{baseUrl}}/api/nguyen-lieu/{{ingredientId}}/export
+Authorization: Bearer {{warehouseLogin.response.body.$.data.token}}
+Content-Type: application/json
+
+{"quantity":1.5,"reason":"Consumption during shift","rowVersion":"{{rowVersion}}"}
+
+### Adjust nonzero signed delta
+POST {{baseUrl}}/api/nguyen-lieu/{{ingredientId}}/adjust
+Authorization: Bearer {{warehouseLogin.response.body.$.data.token}}
+Content-Type: application/json
+
+{"quantity":-0.25,"reason":"Damaged stock","rowVersion":"{{rowVersion}}"}
+
+### Stocktake ABSOLUTE nonnegative count, not delta; even same balance changes token
+POST {{baseUrl}}/api/nguyen-lieu/{{ingredientId}}/stocktake
+Authorization: Bearer {{warehouseLogin.response.body.$.data.token}}
+Content-Type: application/json
+
+{"quantity":8,"reason":"Physical end-of-shift count","rowVersion":"{{rowVersion}}"}
+
+### Immutable stock history
+GET {{baseUrl}}/api/nguyen-lieu/{{ingredientId}}/history?page=1&pageSize=20
+Authorization: Bearer {{warehouseLogin.response.body.$.data.token}}
+
+### Individual stock movement (also linked by creation Location header)
+GET {{baseUrl}}/api/nguyen-lieu/{{ingredientId}}/history/{{transactionId}}
+Authorization: Bearer {{warehouseLogin.response.body.$.data.token}}
+
+### Deactivate ingredient; URL-encode token characters + / =
+DELETE {{baseUrl}}/api/nguyen-lieu/{{ingredientId}}?rowVersion={{rowVersion}}
+Authorization: Bearer {{warehouseLogin.response.body.$.data.token}}
+
+### Recipe list for menu item
+GET {{baseUrl}}/api/dinh-luong?menuItemId={{menuItemId}}&page=1&pageSize=20
+Authorization: Bearer {{warehouseLogin.response.body.$.data.token}}
+
+### Create or update one recipe row
+POST {{baseUrl}}/api/dinh-luong
+Authorization: Bearer {{managerLogin.response.body.$.data.token}}
+Content-Type: application/json
+
+{"maMon":"{{menuItemId}}","maNguyenLieu":"{{ingredientId}}","soLuongSuDung":0.02}
+
+### Search audit history
+GET {{baseUrl}}/api/nhat-ky?page=1&pageSize=20&action=OrderCreated
+Authorization: Bearer {{adminLogin.response.body.$.data.token}}
+
+### Employee list (Manager or Admin)
+GET {{baseUrl}}/api/nhan-vien?status=Working&page=1&pageSize=20
+Authorization: Bearer {{managerLogin.response.body.$.data.token}}
+
+### Employee detail
+GET {{baseUrl}}/api/nhan-vien/{{employeeId}}
+Authorization: Bearer {{adminLogin.response.body.$.data.token}}
+
+### Manager creates profile, not account or role
+POST {{baseUrl}}/api/nhan-vien
+Authorization: Bearer {{managerLogin.response.body.$.data.token}}
+Content-Type: application/json
+
+{"code":"EMP7","fullName":"Demo Employee","position":"Waiter","phone":null,"email":null,"status":"Working"}
+
+### Admin assigns account to route employee; Working required
+POST {{baseUrl}}/api/nhan-vien/{{employeeId}}/account
+Authorization: Bearer {{adminLogin.response.body.$.data.token}}
+Content-Type: application/json
+
+{"username":"employee7","password":"Waiter@123","fullName":"Demo Employee","email":"employee7@cafe.example","role":"Waiter"}
+
+### Resignation locks linked account and invalidates JWT immediately
+PUT {{baseUrl}}/api/nhan-vien/{{employeeId}}
+Authorization: Bearer {{managerLogin.response.body.$.data.token}}
+Content-Type: application/json
+
+{"code":"EMP7","fullName":"Demo Employee","position":"Waiter","phone":null,"email":null,"status":"Resigned"}
+
+### Returning to Working does NOT unlock; Admin must unlock separately via /api/tai-khoan
+PUT {{baseUrl}}/api/nhan-vien/{{employeeId}}
+Authorization: Bearer {{managerLogin.response.body.$.data.token}}
+Content-Type: application/json
+
+{"code":"EMP7","fullName":"Demo Employee","position":"Waiter","phone":null,"email":null,"status":"Working"}
+
+### Soft-delete employee and lock linked account
+DELETE {{baseUrl}}/api/nhan-vien/{{employeeId}}
+Authorization: Bearer {{managerLogin.response.body.$.data.token}}
+
+### Daily NET revenue plus full-range totals (Paid only, Cancelled excluded)
+GET {{baseUrl}}/api/bao-cao/revenue?from={{from}}&to={{to}}&page=1&pageSize=20
+Authorization: Bearer {{managerLogin.response.body.$.data.token}}
+
+### Top items: current menu names, gross revenue BEFORE invoice discount
+GET {{baseUrl}}/api/bao-cao/top-items?from={{from}}&to={{to}}&page=1&pageSize=20
+Authorization: Bearer {{managerLogin.response.body.$.data.token}}
+
+### NET revenue by payment method
+GET {{baseUrl}}/api/bao-cao/payment-methods?from={{from}}&to={{to}}&page=1&pageSize=20
+Authorization: Bearer {{managerLogin.response.body.$.data.token}}
+
+### Current inventory, not historical valuation
+GET {{baseUrl}}/api/bao-cao/inventory?active=true&page=1&pageSize=20
+Authorization: Bearer {{warehouseLogin.response.body.$.data.token}}
+
+### CSV exports contain ALL rows in range/filter, no pagination or search
+GET {{baseUrl}}/api/bao-cao/export/revenue?from={{from}}&to={{to}}
+Authorization: Bearer {{managerLogin.response.body.$.data.token}}
+
+### Top items CSV
+GET {{baseUrl}}/api/bao-cao/export/top-items?from={{from}}&to={{to}}
+Authorization: Bearer {{managerLogin.response.body.$.data.token}}
+
+### Payment methods CSV
+GET {{baseUrl}}/api/bao-cao/export/payment-methods?from={{from}}&to={{to}}
+Authorization: Bearer {{managerLogin.response.body.$.data.token}}
+
+### Inventory CSV (Warehouse may export only this report)
+GET {{baseUrl}}/api/bao-cao/export/inventory?active=true
+Authorization: Bearer {{warehouseLogin.response.body.$.data.token}}
+
+### Phase 3 error: 400, From must be strictly before To
+GET {{baseUrl}}/api/bao-cao/revenue?from={{to}}&to={{from}}
+Authorization: Bearer {{managerLogin.response.body.$.data.token}}
+
+### Phase 3 error: 404, report interval contains no Paid invoices
+GET {{baseUrl}}/api/bao-cao/revenue?from=2000-01-01T00:00:00Z&to=2000-01-02T00:00:00Z
+Authorization: Bearer {{managerLogin.response.body.$.data.token}}
+
+### Phase 3 error: 403, Warehouse cannot export financial reports
+GET {{baseUrl}}/api/bao-cao/export/revenue?from={{from}}&to={{to}}
+Authorization: Bearer {{warehouseLogin.response.body.$.data.token}}
+
+### Phase 3 error: 400, stock export must be positive
+POST {{baseUrl}}/api/nguyen-lieu/{{ingredientId}}/export
+Authorization: Bearer {{warehouseLogin.response.body.$.data.token}}
+Content-Type: application/json
+
+{"quantity":0,"reason":"Invalid export example","rowVersion":"{{rowVersion}}"}
+
+### Phase 3 error: 409, reuse an OLD ingredient token after a successful movement
+POST {{baseUrl}}/api/nguyen-lieu/{{ingredientId}}/import
+Authorization: Bearer {{warehouseLogin.response.body.$.data.token}}
+Content-Type: application/json
+
+{"quantity":1,"reason":"Stale-token example","rowVersion":"{{rowVersion}}"}

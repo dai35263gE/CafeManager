@@ -1,0 +1,276 @@
+@startuml ERD_QuanCaPhe
+title Sơ đồ ERD — Hệ thống Quản lý Quán Cà phê (MySQL 8.0)
+
+hide circle
+skinparam linetype ortho
+skinparam nodesep 40
+skinparam ranksep 60
+skinparam entityFontStyle bold
+
+' =========================================================
+' NHÓM 1 — NHÂN SỰ & PHÂN QUYỀN
+' =========================================================
+package "Nhóm 1 — Nhân sự & Phân quyền" #EEF6FF {
+  entity "NhanVien" as nhanvien {
+    * ma_nhan_vien : varchar(10) <<PK>>
+    --
+    ho_ten : varchar(100)
+    vi_tri : varchar(50)
+    thong_tin_lien_he : varchar(150)
+    trang_thai : enum
+  }
+
+  entity "TaiKhoan" as taikhoan {
+    * ten_dang_nhap : varchar(50) <<PK>>
+    --
+    ma_nhan_vien : varchar(10) <<FK, UNIQUE>>
+    ma_vai_tro : varchar(10) <<FK>>
+    mat_khau_hash : varchar(255)
+    trang_thai : enum
+    thoi_gian_dang_nhap : datetime
+  }
+
+  entity "VaiTro" as vaitro {
+    * ma_vai_tro : varchar(10) <<PK>>
+    --
+    ten_vai_tro : varchar(50)
+    danh_sach_quyen : text
+  }
+
+  entity "NhatKyThaoTac" as nhatky {
+    * ma_nhat_ky : varchar(10) <<PK>>
+    --
+    ma_nhan_vien : varchar(10) <<FK>>
+    loai_thao_tac : varchar(50)
+    doi_tuong_tac_dong : varchar(100)
+    noi_dung : text
+    thoi_gian : datetime
+  }
+
+  entity "ThongBao" as thongbao {
+    * ma_thong_bao : varchar(10) <<PK>>
+    --
+    ma_don : varchar(10) <<FK, NULL>>
+    ma_vai_tro : varchar(10) <<FK>>
+    noi_dung : text
+    loai_thong_bao : varchar(50)
+    thoi_gian : datetime
+  }
+}
+
+' =========================================================
+' NHÓM 2 — BÁN HÀNG
+' =========================================================
+package "Nhóm 2 — Bán hàng" #FFF7E6 {
+  entity "Ban" as ban {
+    * ma_ban : varchar(10) <<PK>>
+    --
+    khu_vuc : varchar(50)
+    trang_thai : enum
+    ghi_chu : varchar(255)
+  }
+
+  entity "DonHang" as donhang {
+    * ma_don : varchar(10) <<PK>>
+    --
+    ma_ban : varchar(10) <<FK, NULL, BÀN CHÍNH>>
+    ma_nhan_vien : varchar(10) <<FK>>
+    loai_don : enum
+    thoi_gian_tao : datetime
+    trang_thai : enum
+    tam_tinh : decimal(12,2)
+  }
+
+  entity "DonHangBan" as donhangban {
+    * ma_don : varchar(10) <<PK, FK>>
+    * ma_ban : varchar(10) <<PK, FK>>
+    * thoi_gian_bat_dau : datetime <<PK>>
+    --
+    thoi_gian_ket_thuc : datetime <<NULL>>
+  }
+
+  entity "ChiTietDonHang" as chitiet {
+    * ma_chi_tiet : varchar(10) <<PK>>
+    --
+    ma_don : varchar(10) <<FK>>
+    ma_mon : varchar(10) <<FK>>
+    ma_kich_co : varchar(10) <<FK, NULL>>
+    so_luong : int
+    don_gia : decimal(12,2)
+    ghi_chu : varchar(255)
+    trang_thai_mon : enum
+  }
+
+  entity "ChiTietTopping" as cttop {
+    * ma_chi_tiet : varchar(10) <<PK, FK>>
+    * ma_topping : varchar(10) <<PK, FK>>
+  }
+
+  entity "HoaDon" as hoadon {
+    * ma_hoa_don : varchar(10) <<PK>>
+    --
+    ma_don : varchar(10) <<FK, UNIQUE>>
+    ma_nhan_vien : varchar(10) <<FK>>
+    ma_khuyen_mai : varchar(10) <<FK, NULL>>
+    tong_tien_hang : decimal(12,2)
+    thue_vat : decimal(12,2)
+    phi_dich_vu : decimal(12,2)
+    tien_giam_gia : decimal(12,2)
+    tong_thanh_toan : decimal(12,2)
+    phuong_thuc_thanh_toan : enum
+    tien_khach_dua : decimal(12,2)
+    tien_thua : decimal(12,2)
+    thoi_gian_lap : datetime
+    trang_thai : enum
+  }
+
+  entity "KhuyenMai" as khuyenmai {
+    * ma_khuyen_mai : varchar(10) <<PK>>
+    --
+    ten_chuong_trinh : varchar(100)
+    loai_giam_gia : enum
+    gia_tri_giam : decimal(12,2)
+    ngay_bat_dau : date
+    ngay_ket_thuc : date
+    gia_tri_don_toi_thieu : decimal(12,2)
+    trang_thai : enum
+  }
+}
+
+' =========================================================
+' NHÓM 3 — THỰC ĐƠN
+' =========================================================
+package "Nhóm 3 — Thực đơn" #E8F5E9 {
+  entity "DanhMuc" as danhmuc {
+    * ma_danh_muc : varchar(10) <<PK>>
+    --
+    ten_danh_muc : varchar(100)
+  }
+
+  entity "Mon" as mon {
+    * ma_mon : varchar(10) <<PK>>
+    --
+    ma_danh_muc : varchar(10) <<FK>>
+    ten_mon : varchar(100)
+    mo_ta : text
+    hinh_anh : varchar(255)
+    trang_thai : enum
+  }
+
+  entity "KichCo" as kichco {
+    * ma_kich_co : varchar(10) <<PK>>
+    --
+    ma_mon : varchar(10) <<FK>>
+    ten_kich_co : varchar(20)
+    gia_ban : decimal(12,2)
+  }
+
+  entity "Topping" as topping {
+    * ma_topping : varchar(10) <<PK>>
+    --
+    ma_mon : varchar(10) <<FK>>
+    ten_topping : varchar(100)
+    gia_ban : decimal(12,2)
+  }
+}
+
+' =========================================================
+' NHÓM 4 — KHO
+' =========================================================
+package "Nhóm 4 — Kho" #FCE4EC {
+  entity "DinhLuong" as dinhluong {
+    * ma_dinh_luong : varchar(10) <<PK>>
+    --
+    ma_mon : varchar(10) <<FK, UNIQUE>>
+    ma_nguyen_lieu : varchar(10) <<FK, UNIQUE>>
+    so_luong_su_dung : decimal(10,3)
+  }
+
+  entity "NguyenLieu" as nguyenlieu {
+    * ma_nguyen_lieu : varchar(10) <<PK>>
+    --
+    ten_nguyen_lieu : varchar(100)
+    don_vi_tinh : varchar(20)
+    so_luong_ton : decimal(10,3)
+    dinh_muc_toi_thieu : decimal(10,3)
+    han_su_dung : date
+  }
+
+  entity "BienDongKho" as biendong {
+    * ma_bien_dong : varchar(10) <<PK>>
+    --
+    ma_nguyen_lieu : varchar(10) <<FK>>
+    ma_nhan_vien : varchar(10) <<FK>>
+    loai_bien_dong : enum
+    so_luong : decimal(10,3)
+    thoi_gian : datetime
+    ly_do : varchar(255)
+  }
+}
+
+' =========================================================
+' QUAN HỆ (Crow's foot)
+' ||--o|  : 1 — 0..1
+' ||--o{  : 1 — 0..n
+' ||--|{  : 1 — 1..n
+' =========================================================
+
+' --- Nhân sự ---
+nhanvien ||--o| taikhoan : "sở hữu"
+vaitro   ||--o{ taikhoan : "phân quyền"
+vaitro   ||--o{ thongbao : "nhận"
+donhang  ||--o{ thongbao : "kích hoạt"
+
+nhanvien ||--o{ donhang  : "lập"
+nhanvien ||--o{ hoadon   : "lập (thu ngân)"
+nhanvien ||--o{ nhatky   : "thực hiện"
+nhanvien ||--o{ biendong : "thực hiện"
+
+' --- Bán hàng ---
+ban      ||--o{ donhang  : "bàn chính"
+ban      ||--o{ donhangban : "được gắn với"
+donhang  ||--o{ donhangban : "phục vụ tại"
+donhang  ||--|{ chitiet  : "gồm"
+donhang  ||--o| hoadon   : "thanh toán bởi"
+khuyenmai ||--o{ hoadon  : "áp dụng"
+
+' --- Thực đơn ---
+danhmuc  ||--o{ mon      : "chứa"
+mon      ||--o{ kichco   : "có"
+mon      ||--o{ topping  : "có"
+mon      ||--o{ chitiet  : "được gọi"
+kichco   ||--o{ chitiet  : "được chọn"
+chitiet  ||--o{ cttop    : "có topping"
+topping  ||--o{ cttop    : "thuộc"
+
+' --- Kho ---
+mon        ||--o{ dinhluong : "cấu thành"
+nguyenlieu ||--o{ dinhluong : "được dùng"
+nguyenlieu ||--o{ biendong  : "biến động"
+
+' =========================================================
+' GHI CHÚ NGHIỆP VỤ
+' =========================================================
+legend right
+  **Quy ước ký hiệu**
+  ||—o|  : một — không hoặc một
+  ||—o{  : một — không hoặc nhiều
+  ||—|{  : một — một hoặc nhiều
+  PK     : khóa chính
+  FK     : khóa ngoại
+  NULL   : cho phép rỗng
+  UNIQUE : duy nhất
+
+  **Ghi chú**
+  • DonHangBan lưu lịch sử liên kết n-n giữa DonHang và Ban;
+    liên kết đang hoạt động có thoi_gian_ket_thuc IS NULL
+  • Một bàn tối đa một đơn đang hoạt động
+  • DonHang.ma_ban là bàn chính, đồng bộ với DonHangBan
+  • HoaDon.ma_don UNIQUE → quan hệ 1-1 với DonHang
+  • TaiKhoan.ma_nhan_vien UNIQUE → 1-1 với NhanVien
+  • ChiTietTopping là bảng trung gian n-n
+    giữa ChiTietDonHang và Topping
+  • DinhLuong: (ma_mon, ma_nguyen_lieu) UNIQUE
+endlegend
+
+@enduml

@@ -1,0 +1,291 @@
+@startuml ClassDiagram_QuanCaPhe
+title Sơ đồ lớp — Hệ thống Quản lý Quán Cà phê
+
+skinparam classAttributeIconSize 0
+skinparam classFontStyle bold
+skinparam nodesep 50
+skinparam ranksep 60
+skinparam linetype ortho
+skinparam packageStyle rectangle
+hide empty members
+
+' =========================================================
+' NHÓM 1 — NHÂN SỰ & PHÂN QUYỀN
+' =========================================================
+package "Nhóm 1 — Nhân sự & Phân quyền" #EEF6FF {
+  class NhanVien <<Entity>> {
+    - maNhanVien : String {PK}
+    - hoTen : String
+    - viTri : String
+    - thongTinLienHe : String
+    - trangThai : String
+    + themNhanVien() : boolean
+    + capNhatHoSo() : boolean
+    + timKiemNhanVien(tuKhoa) : List~NhanVien~
+  }
+
+  class TaiKhoan <<Entity>> {
+    - tenDangNhap : String {PK}
+    - matKhauHash : String
+    - trangThai : String
+    - thoiGianDangNhap : Date
+    + dangNhap(tenDangNhap, matKhau) : boolean
+    + dangXuat() : void
+    + doiMatKhau(matKhauCu, matKhauMoi) : boolean
+    + xacThucTaiKhoan() : boolean
+    + layQuyenTruyCap() : List~String~
+  }
+
+  class VaiTro <<Entity>> {
+    - maVaiTro : String {PK}
+    - tenVaiTro : String
+    + layDanhSachQuyen() : List~String~
+  }
+
+  class NhatKyThaoTac <<Entity>> {
+    - maNhatKy : String {PK}
+    - loaiThaoTac : String
+    - doiTuongTacDong : String
+    - noiDung : String
+    - thoiGian : Date
+    + ghiNhatKy(loaiThaoTac, doiTuong, noiDung) : void
+    + timKiemNhatKy(tuNgay, denNgay, loaiThaoTac) : List~NhatKyThaoTac~
+  }
+
+  class ThongBao <<Entity>> {
+    - maThongBao : String {PK}
+    - noiDung : String
+    - loaiThongBao : String
+    - thoiGian : Date
+    + guiThongBao(boPhanNhan) : boolean
+    + ghiNhanDaGui() : void
+  }
+}
+
+' =========================================================
+' NHÓM 2 — BÁN HÀNG
+' =========================================================
+package "Nhóm 2 — Bán hàng" #FFF7E6 {
+  class Ban <<Entity>> {
+    - maBan : String {PK}
+    - khuVuc : String
+    - trangThai : String
+    - ghiChu : String
+    + xemSoDoBan() : List~Ban~
+    + xepBan() : boolean
+    + chuyenBan(banDich) : boolean
+    + ghepBan(danhSachBan) : boolean
+    + capNhatTrangThaiVeSinh() : boolean
+    + themBan() : boolean
+    + suaThongTin() : boolean
+    + ngungSuDung() : boolean
+  }
+
+  class DonHang <<Entity>> {
+    - maDon : String {PK}
+    - maBan : String {FK, bàn chính}
+    - loaiDon : String
+    - thoiGianTao : Date
+    - trangThai : String
+    - tamTinh : Float
+    + taoDon() : boolean
+    + themMon(mon, soLuong, ghiChu) : boolean
+    + tinhTienTamTinh() : Float
+    + huyMon(chiTietDon) : boolean
+    + chuyenBan(banDich) : boolean
+    + ghepDon(donDich) : boolean
+    + hoanTatDon() : boolean
+  }
+
+  class DonHangBan <<Association Class>> {
+    - maDon : String {PK, FK}
+    - maBan : String {PK, FK}
+    - thoiGianBatDau : Date {PK}
+    - thoiGianKetThuc : Date?
+  }
+
+  class ChiTietDonHang <<Entity>> {
+    - maChiTiet : String {PK}
+    - soLuong : Int
+    - donGia : Float
+    - ghiChu : String
+    - trangThaiMon : String
+    + capNhatTrangThaiMon(trangThaiMoi) : boolean
+    + kiemTraDieuKienHuy() : boolean
+  }
+
+  class HoaDon <<Entity>> {
+    - maHoaDon : String {PK}
+    - tongTienHang : Float
+    - thueVAT : Float
+    - phiDichVu : Float
+    - tienGiamGia : Float
+    - tongThanhToan : Float
+    - phuongThucThanhToan : String
+    - tienKhachDua : Float
+    - tienThua : Float
+    - thoiGianLap : Date
+    + lapHoaDon() : boolean
+    + tinhTongTienThanhToan() : Float
+    + apDungKhuyenMai(khuyenMai) : boolean
+    + xuLyThanhToan() : boolean
+    + inHoaDon() : boolean
+    + huyHoaDon(lyDo) : boolean
+  }
+
+  class KhuyenMai <<Entity>> {
+    - maKhuyenMai : String {PK}
+    - tenChuongTrinh : String
+    - loaiGiamGia : String
+    - giaTriGiam : Float
+    - ngayBatDau : Date
+    - ngayKetThuc : Date
+    - giaTriDonToiThieu : Float
+    - trangThai : String
+    + themKhuyenMai() : boolean
+    + suaKhuyenMai() : boolean
+    + tamNgung() : boolean
+    + kiemTraHopLe(hoaDon) : boolean
+    + layLichSuSuDung() : List~HoaDon~
+  }
+}
+
+' =========================================================
+' NHÓM 3 — THỰC ĐƠN
+' =========================================================
+package "Nhóm 3 — Thực đơn" #E8F5E9 {
+  class DanhMuc <<Entity>> {
+    - maDanhMuc : String {PK}
+    - tenDanhMuc : String
+    + themDanhMuc() : boolean
+    + suaDanhMuc() : boolean
+  }
+
+  class Mon <<Entity>> {
+    - maMon : String {PK}
+    - tenMon : String
+    - moTa : String
+    - hinhAnh : String
+    - trangThai : String
+    + themMon() : boolean
+    + suaThongTinMon() : boolean
+    + capNhatTrangThaiKinhDoanh() : boolean
+    + kiemTraDuLieuMon() : boolean
+  }
+
+  class KichCo <<Entity>> {
+    - maKichCo : String {PK}
+    - tenKichCo : String
+    - giaBan : Float
+  }
+
+  class Topping <<Entity>> {
+    - maTopping : String {PK}
+    - tenTopping : String
+    - giaBan : Float
+  }
+}
+
+' =========================================================
+' NHÓM 4 — KHO
+' =========================================================
+package "Nhóm 4 — Kho" #FCE4EC {
+  class DinhLuong <<Association Class>> {
+    - maDinhLuong : String {PK}
+    - soLuongSuDung : Float
+    + capNhatDinhLuong() : boolean
+  }
+
+  class NguyenLieu <<Entity>> {
+    - maNguyenLieu : String {PK}
+    - tenNguyenLieu : String
+    - donViTinh : String
+    - soLuongTon : Float
+    - dinhMucToiThieu : Float
+    - hanSuDung : Date
+    + capNhatTonKho(soLuong) : void
+    + kiemTraCanhBao() : boolean
+  }
+
+  class BienDongKho <<Entity>> {
+    - maBienDong : String {PK}
+    - loaiBienDong : String
+    - soLuong : Float
+    - thoiGian : Date
+    - lyDo : String
+    + lapBienDong() : boolean
+    + capNhatTonKho() : boolean
+  }
+}
+
+' =========================================================
+' QUAN HỆ
+' =========================================================
+
+' --- Nhân sự ---
+NhanVien "1" -- "0..1" TaiKhoan : sở hữu >
+TaiKhoan "*" -- "1" VaiTro : thuộc >
+VaiTro "1" -- "*" ThongBao : nhận >
+DonHang "1" -- "*" ThongBao : kích hoạt >
+
+NhanVien "1" -- "*" DonHang : lập >
+NhanVien "1" -- "*" HoaDon : lập (thu ngân) >
+NhanVien "1" -- "*" NhatKyThaoTac : thực hiện >
+NhanVien "1" -- "*" BienDongKho : thực hiện >
+
+' --- Bán hàng ---
+Ban "1" -- "*" DonHang : bàn chính >
+Ban "1" -- "*" DonHangBan : được gắn với >
+DonHang "1" -- "*" DonHangBan : phục vụ tại >
+DonHang "1" *-- "1..*" ChiTietDonHang : gồm >
+DonHang "1" -- "0..1" HoaDon : thanh toán bởi >
+HoaDon "0..1" -- "0..1" KhuyenMai : áp dụng >
+
+' --- Thực đơn ---
+DanhMuc "1" o-- "*" Mon : chứa >
+Mon "1" o-- "*" KichCo : có >
+Mon "1" o-- "*" Topping : có >
+ChiTietDonHang "*" -- "1" Mon : tham chiếu >
+ChiTietDonHang "*" -- "0..1" KichCo : chọn >
+ChiTietDonHang "*" -- "*" Topping : thêm >
+
+' --- Kho ---
+Mon "1" -- "*" DinhLuong : cấu thành từ >
+NguyenLieu "1" -- "*" DinhLuong : được dùng trong >
+NguyenLieu "1" -- "*" BienDongKho : có biến động >
+
+' =========================================================
+' GHI CHÚ NGHIỆP VỤ
+' =========================================================
+note right of ChiTietDonHang
+  Lưu donGia đã chốt — thay đổi
+  giá thực đơn không ảnh hưởng
+  lịch sử giao dịch.
+end note
+
+note right of Mon
+  Không xóa món đã phát sinh giao dịch;
+  chuyển sang trạng thái "Ngừng bán".
+end note
+
+note right of HoaDon
+  Chỉ hóa đơn đã thanh toán
+  mới tính vào doanh thu.
+end note
+
+note right of NguyenLieu
+  Cảnh báo khi soLuongTon < dinhMucToiThieu
+  hoặc sắp hết hạn sử dụng.
+end note
+
+note right of Ban
+  Trạng thái cập nhật theo vòng đời
+  đơn hàng + dọn vệ sinh.
+end note
+
+note bottom of DinhLuong
+  Lớp kết hợp giữa Mon và NguyenLieu;
+  cơ sở trừ kho khi món được bán.
+end note
+
+@enduml
