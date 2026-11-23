@@ -251,8 +251,11 @@ Schema database không thay đổi ở Phase 2, **không cần migration bổ su
 | Available ↔ OutOfStock / báo thiếu nguyên liệu | Barista, Manager |
 | Discontinued / khôi phục món đã ngừng bán | Manager |
 
-Admin không tự động có quyền vận hành. Warehouse có quyền kho ở Phase 3
-như bảng dưới đây. Khách hàng không có tài khoản.
+Admin có toàn quyền trên mọi phân hệ và thao tác trong các bảng phân quyền,
+bao gồm vận hành, pha chế, thanh toán, kho, nhân viên, báo cáo và quản trị tài khoản.
+Các quy tắc nghiệp vụ, kiểm tra trạng thái/RowVersion và bảo vệ Admin cuối cùng
+vẫn được áp dụng. Admin được xem và đánh dấu đã đọc thông báo của mọi vai trò.
+Warehouse có quyền kho ở Phase 3 như bảng dưới đây. Khách hàng không có tài khoản.
 
 ### Auth và tài khoản
 

@@ -264,7 +264,7 @@ internal sealed class CatalogOperations(
 
     public async Task<MenuItemResponse> SetMenuStatusAsync(string id, MenuStatusRequest request, CancellationToken ct)
     {
-        if (!ServiceHelpers.IsManager(accessor))
+        if (!ServiceHelpers.CanManageOperations(accessor))
             throw new ApiException(403, "Only Manager can change menu availability.");
         if (!Enum.IsDefined(request.Status))
             throw Validation("Status", "The selected menu status is invalid.");

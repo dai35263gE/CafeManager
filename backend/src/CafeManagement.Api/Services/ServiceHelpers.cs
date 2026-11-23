@@ -22,6 +22,9 @@ internal static class ServiceHelpers
     public static bool IsManager(IHttpContextAccessor accessor) =>
         accessor.HttpContext?.User.IsInRole(Roles.Manager) == true;
 
+    public static bool CanManageOperations(IHttpContextAccessor accessor) =>
+        IsManager(accessor) || accessor.HttpContext?.User.IsInRole(Roles.Admin) == true;
+
     public static void Audit(CafeDbContext db, string actorEmployeeId, string action, string entity, string id, string description)
     {
         const string alphabet = "0123456789ABCDEFGHJKLMNPQRSTUVWXYZ";

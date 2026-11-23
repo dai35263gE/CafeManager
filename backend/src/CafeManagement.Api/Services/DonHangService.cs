@@ -170,7 +170,7 @@ public sealed class DonHangService(
                 break;
             case OrderStatus.Cancelled:
                 RequireReason(request.Reason);
-                if (!ServiceHelpers.IsManager(accessor) &&
+                if (!ServiceHelpers.CanManageOperations(accessor) &&
                     order.ChiTiets.Any(x => x.TrangThaiMon is OrderItemStatus.Preparing or OrderItemStatus.Completed or OrderItemStatus.Served))
                     throw new ApiException(403, "Only Manager can cancel an order after preparation starts.");
                 foreach (var line in order.ChiTiets)
@@ -197,7 +197,7 @@ public sealed class DonHangService(
         RequireMutable(order);
         var line = FindLine(order, itemId);
         ServiceHelpers.Version(db.Entry(line), line.RowVersion, request.RowVersion);
-        var manager = ServiceHelpers.IsManager(accessor);
+        var manager = ServiceHelpers.CanManageOperations(accessor);
         var user = accessor.HttpContext?.User ?? throw new ApiException(401, "Authentication required.");
         switch (request.Status)
         {
@@ -268,7 +268,7 @@ public sealed class DonHangService(
     public async Task<OrderResponse> MoLaiMonAsync(
         string id, string itemId, ReopenOrderItemRequest request, CancellationToken ct)
     {
-        if (!ServiceHelpers.IsManager(accessor))
+        if (!ServiceHelpers.CanManageOperations(accessor))
             throw new ApiException(403, "Manager role required.");
 
         await using var transaction = await db.Database.BeginTransactionAsync(IsolationLevel.Serializable, ct);
@@ -575,7 +575,7 @@ public sealed class DonHangService(
             .Select(x => x.MaVaiTro)
             .SingleOrDefaultAsync(ct)
             ?? throw new ApiException(403, "The account role is not configured.");
-        var query = db.ThongBaos.AsNoTracking().Where(x => x.MaVaiTro == roleId);
+        var query = db.ThongBaos.AsNoTracking().Where(x => roleName == Roles.Admin || x.MaVaiTro == roleId);
         if (since.HasValue)
         {
             var start = since.Value.UtcDateTime;
@@ -611,7 +611,7 @@ public sealed class DonHangService(
             .SingleOrDefaultAsync(ct)
             ?? throw new ApiException(403, "The account role is not configured.");
         var notice = await db.ThongBaos.SingleOrDefaultAsync(x =>
-            x.MaThongBao == id && x.MaVaiTro == roleId, ct)
+            x.MaThongBao == id && (roleName == Roles.Admin || x.MaVaiTro == roleId), ct)
             ?? throw ServiceHelpers.NotFound("Notification");
         var target = $"ThongBao:{notice.MaThongBao}";
         var alreadyRead = await db.NhatKyThaoTacs.AnyAsync(x =>

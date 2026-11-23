@@ -22,7 +22,7 @@ const statusColor: Record<TableStatus, string> = {
 export default function TablesPage() {
   const { user } = useAuth()
   const canRead = allowed(user?.role, floor)
-  const canManage = user?.role === 'Manager'
+  const canManage = allowed(user?.role, ['Manager'])
   const tableQuery = useOptions<CafeTable>('/ban', undefined, canRead)
   const tables = tableQuery.data || []
   const [selectedId, setSelectedId] = useState<string>()

@@ -27,7 +27,7 @@ const lineColumns = [
 export default function InvoicesPage() {
   const { user } = useAuth()
   const canRead = allowed(user?.role, billing)
-  const manager = user?.role === 'Manager'
+  const manager = allowed(user?.role, ['Manager'])
   const [searchParams, setSearchParams] = useSearchParams()
   const routeOrder = searchParams.get('orderId')
   const [status, setStatus] = useState<string>()

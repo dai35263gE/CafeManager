@@ -75,7 +75,7 @@ export default function OrdersPage() {
     activeItems.every(item => item.status === 'Served')
   const hasPreparedItems = !!order?.items.some(item =>
     ['Preparing', 'Completed', 'Served'].includes(item.status))
-  const canCancelOrder = writable && mutable && (user?.role === 'Manager' || !hasPreparedItems)
+  const canCancelOrder = writable && mutable && (allowed(user?.role, ['Manager']) || !hasPreparedItems)
 
   function closeLine() {
     setAdding(false)
@@ -213,7 +213,7 @@ export default function OrdersPage() {
             }}>Sửa</Button>}
             {writable && mutable && row.status !== 'Cancelled' &&
               (order.status === 'Open' || activeItems.length > 1) &&
-              (user?.role === 'Manager' || row.status === 'Waiting') && <Button size="small" danger onClick={() => {
+              (allowed(user?.role, ['Manager']) || row.status === 'Waiting') && <Button size="small" danger onClick={() => {
                 cancelItemForm.resetFields()
                 setCancellingItem(row)
               }}>Hủy món</Button>}

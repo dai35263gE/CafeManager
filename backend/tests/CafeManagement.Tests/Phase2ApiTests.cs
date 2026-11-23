@@ -44,7 +44,7 @@ public sealed class Phase2ApiTests
         using var warehouse = await SignIn(host, "warehouse");
         using var cashier = await SignIn(host, "cashier");
         Assert.Equal(HttpStatusCode.Forbidden, (await warehouse.GetAsync("/api/don-hang")).StatusCode);
-        Assert.Equal(HttpStatusCode.Forbidden, (await admin.GetAsync("/api/mon")).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await admin.GetAsync("/api/mon")).StatusCode);
         Assert.Equal(HttpStatusCode.Forbidden, (await waiter.GetAsync("/api/tai-khoan")).StatusCode);
         Assert.Equal(HttpStatusCode.Forbidden, (await barista.PostAsJsonAsync("/api/don-hang", new { type = "TakeAway" })).StatusCode);
         Assert.Equal(HttpStatusCode.Forbidden, (await cashier.PostAsJsonAsync("/api/don-hang", new { type = "TakeAway" })).StatusCode);
@@ -84,6 +84,50 @@ public sealed class Phase2ApiTests
         var db = scope.ServiceProvider.GetRequiredService<CafeDbContext>();
         Assert.True(await db.NhatKyThaoTacs.AnyAsync(x => x.LoaiThaoTac == "PasswordChanged"));
         Assert.True(await db.NhatKyThaoTacs.AnyAsync(x => x.LoaiThaoTac == "Login"));
+    }
+
+    [SqlServerFact]
+    public async Task AdminCanManageOperationsAndCompleteAnotherBaristasItem()
+    {
+        await using var host = await ApiHost.CreateAsync();
+        using var admin = await SignIn(host, "admin");
+        using var barista = await SignIn(host, "barista");
+        foreach (var path in new[]
+        {
+            "/api/ban", "/api/mon", "/api/don-hang", "/api/hoa-don", "/api/khuyen-mai",
+            "/api/nguyen-lieu", "/api/dinh-luong", "/api/nhan-vien", "/api/bao-cao/inventory",
+            "/api/tai-khoan"
+        })
+            Assert.Equal(HttpStatusCode.OK, (await admin.GetAsync(path)).StatusCode);
+
+        var employee = await Data<EmployeeResponse>(await admin.PostAsJsonAsync("/api/nhan-vien",
+            new { fullName = "Admin-created employee", position = "Waiter" }));
+        Assert.False(string.IsNullOrWhiteSpace(employee.Id));
+        var menu = (await Data<PageResponse<MenuItemResponse>>(await admin.GetAsync("/api/mon"))).Items
+            .Single(x => x.Name == "Cà phê sữa");
+        var order = await Data<OrderResponse>(await admin.PostAsJsonAsync("/api/don-hang", new
+        {
+            type = "TakeAway", confirm = true,
+            items = new[] { new { menuItemId = menu.Id, sizeId = menu.Sizes.First().SizeId, quantity = 1 } }
+        }));
+        var item = order.Items.Single();
+        order = await Data<OrderResponse>(await barista.PatchAsJsonAsync(
+            $"/api/don-hang/{order.Id}/items/{item.Id}/status",
+            new { status = "Preparing", rowVersion = item.RowVersion }));
+        order = await Data<OrderResponse>(await admin.PatchAsJsonAsync(
+            $"/api/don-hang/{order.Id}/items/{item.Id}/status",
+            new { status = "Completed", rowVersion = order.Items.Single().RowVersion }));
+        Assert.Equal("Completed", order.Items.Single().Status.ToString());
+        var notice = (await Data<PageResponse<KitchenNoticeResponse>>(
+            await barista.GetAsync("/api/don-hang/kitchen-notices"))).Items.First();
+        Assert.True((await Data<KitchenNoticeResponse>(await admin.PatchAsync(
+            $"/api/don-hang/kitchen-notices/{notice.Id}/read", null))).IsRead);
+        order = await Data<OrderResponse>(await admin.PatchAsJsonAsync(
+            $"/api/don-hang/{order.Id}/status",
+            new { status = "Cancelled", rowVersion = order.RowVersion, reason = "Admin cancellation" }));
+        Assert.Equal("Cancelled", order.Status.ToString());
+        Assert.Equal(HttpStatusCode.OK, (await admin.PatchAsJsonAsync($"/api/mon/{menu.Id}/status",
+            new { status = "OutOfStock", rowVersion = menu.RowVersion })).StatusCode);
     }
 
     [SqlServerFact]

@@ -4,6 +4,7 @@ import { send } from '../api/client'
 import type { Category, MenuItem, MenuStatus } from '../api/types'
 import { useAction, useOptions, usePage } from '../api/hooks'
 import { useAuth } from '../auth/AuthContext'
+import { allowed } from '../auth/permissions'
 import ErdCrud from '../components/ErdCrud'
 import { PageTitle, QueryError, StatusTag } from '../components/Common'
 import { money, options } from '../utils/display'
@@ -19,7 +20,7 @@ interface MenuForm {
 
 function Menu() {
   const { user } = useAuth()
-  const manager = user?.role === 'Manager'
+  const manager = allowed(user?.role, ['Manager'])
   const [statusFilter, setStatusFilter] = useState<MenuStatus | undefined>()
   const list = usePage<MenuItem>('/mon', { orderableOnly: !manager, status: statusFilter }, true)
   const categories = useOptions<Category>('/danh-muc', undefined, manager)
@@ -170,7 +171,7 @@ export default function CatalogPage() {
   const { user } = useAuth()
   return <><PageTitle title="Thực đơn và danh mục" /><Tabs items={[
     { key: 'mon', label: 'Món', children: <Menu /> },
-    { key: 'danh-muc', label: 'Danh mục', children: <ErdCrud<Category> title="Danh mục" path="/danh-muc" id="id" writable={user?.role === 'Manager'} fields={[
+    { key: 'danh-muc', label: 'Danh mục', children: <ErdCrud<Category> title="Danh mục" path="/danh-muc" id="id" writable={allowed(user?.role, ['Manager'])} fields={[
       { name: 'name', label: 'Tên danh mục', required: true, max: 100 },
     ]} /> },
   ]} />

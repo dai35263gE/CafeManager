@@ -123,7 +123,7 @@ function utcDayStart(date: Dayjs) {
 export default function ReportsPage() {
   const { user } = useAuth()
   const canStock = allowed(user?.role, stockWrite)
-  const financial = user?.role === 'Manager'
+  const financial = allowed(user?.role, ['Manager'])
   const [tab, setTab] = useState<ReportName>(financial ? 'revenue' : 'inventory')
   const [range, setRange] = useState<Range>()
   const [periodMode, setPeriodMode] = useState<PeriodMode>('month')

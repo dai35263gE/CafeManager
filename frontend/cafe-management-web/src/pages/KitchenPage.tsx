@@ -60,9 +60,9 @@ export default function KitchenPage() {
         { title: 'Thời gian', dataIndex: 'createdAt', render: dateTime },
         { title: 'Thao tác', render: (_, row) => <Space>
           {canPrepare && row.item.status === 'Waiting' && <Button type="primary" loading={action.busy} onClick={() => transition(row, 'Preparing')}>Nhận pha chế</Button>}
-          {canPrepare && row.item.status === 'Preparing' && (user?.role === 'Manager' || row.item.preparedByUserId === user?.id) && <Button loading={action.busy} onClick={() => transition(row, 'Completed')}>Hoàn thành</Button>}
+          {canPrepare && row.item.status === 'Preparing' && (allowed(user?.role, ['Manager']) || row.item.preparedByUserId === user?.id) && <Button loading={action.busy} onClick={() => transition(row, 'Completed')}>Hoàn thành</Button>}
           {canServe && row.item.status === 'Completed' && <Button type="primary" loading={action.busy} onClick={() => transition(row, 'Served')}>Đã phục vụ</Button>}
-          {user?.role === 'Manager' && row.item.status === 'Cancelled' && ['Open', 'Confirmed', 'Preparing'].includes(row.orderStatus) && <Button loading={action.busy} onClick={() => { reopenForm.resetFields(); setReopening(row) }}>Mở lại món</Button>}
+          {allowed(user?.role, ['Manager']) && row.item.status === 'Cancelled' && ['Open', 'Confirmed', 'Preparing'].includes(row.orderStatus) && <Button loading={action.busy} onClick={() => { reopenForm.resetFields(); setReopening(row) }}>Mở lại món</Button>}
         </Space> },
       ]} locale={{ emptyText: status === 'Waiting' ? 'Hiện chưa có món chờ pha chế' : 'Không có món phù hợp.' }} />
     </> }] : []), { key: 'notices', label: 'Thông báo', children: <><QueryError error={notices.query.error} retry={notices.query.refetch} />

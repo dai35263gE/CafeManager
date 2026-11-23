@@ -6,9 +6,10 @@ import type { AxiosAdapter } from 'axios'
 import { ApiError, errorText, http } from '../api/client'
 import CatalogPage from './CatalogPage'
 
-vi.mock('../auth/AuthContext', () => ({ useAuth: () => ({ user: { role: 'Manager' } }) }))
+const auth = vi.hoisted(() => ({ role: 'Manager' }))
+vi.mock('../auth/AuthContext', () => ({ useAuth: () => ({ user: { role: auth.role } }) }))
 const original = http.defaults.adapter
-afterEach(() => { http.defaults.adapter = original })
+afterEach(() => { http.defaults.adapter = original; auth.role = 'Manager' })
 
 describe('catalog validation errors', () => {
   it('identifies the field that needs correction', () => {
@@ -18,7 +19,8 @@ describe('catalog validation errors', () => {
 })
 
 describe('menu API contract', () => {
-  it('renders seeded menu items from the API response shape', async () => {
+  it.each(['Manager', 'Admin'])('renders the full menu and management controls for %s', async role => {
+    auth.role = role
     const dish = { id: 'MON-001', categoryId: 'D01', categoryName: 'Cà phê', name: 'Cà phê sữa',
       description: null, imageUrl: null, basePrice: 25000, status: 'Available', isActive: true,
       sizes: [{ sizeId: 'KC01', name: 'Nhỏ', price: 25000, isActive: true }],
@@ -39,5 +41,8 @@ describe('menu API contract', () => {
     expect(screen.getByText(/Nhỏ:/)).toBeTruthy()
     expect(screen.getByText(/Kem/)).toBeTruthy()
     expect(orderableOnly).toBe(false)
+    expect(screen.getByRole('button', { name: 'Thêm món' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Sửa' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Trạng thái' })).toBeTruthy()
   })
 })

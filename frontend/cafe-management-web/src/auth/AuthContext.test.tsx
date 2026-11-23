@@ -21,6 +21,7 @@ function mount(path: string, adapter: AxiosAdapter) {
     <Route path="/login" element={<LoginPage />} />
     <Route element={<ProtectedRoute />}><Route path="/orders" element={<SessionView />} />
       <Route path="/users" element={<RoleGuard roles={['Admin']}><p>Danh sách tài khoản</p></RoleGuard>} /></Route>
+    <Route element={<ProtectedRoute />}><Route path="/reports" element={<RoleGuard roles={['Manager']}><p>Báo cáo doanh thu</p></RoleGuard>} /></Route>
   </Routes></AuthProvider></MemoryRouter></QueryClientProvider></AntApp>)
 }
 const waiter = { id: 'test-user', username: 'test', fullName: 'Người phục vụ', role: 'Waiter', employeeId: null, isActive: true, isLocked: false, lastLoginAt: null }
@@ -48,6 +49,13 @@ describe('Authentication and route permissions', () => {
     mount('/users', async config => ({ config, headers: {}, status: 200, statusText: 'OK', data: { success: true, message: 'OK', data: waiter } }))
     expect(await screen.findByText('Không có quyền truy cập')).toBeTruthy()
     expect(screen.queryByText('Danh sách tài khoản')).toBeNull()
+  })
+  it('allows Admin to open a Manager-only route after restoring the session', async () => {
+    sessionStorage.setItem('cafe.accessToken', 'unit-test-token')
+    mount('/reports', async config => ({ config, headers: {}, status: 200, statusText: 'OK',
+      data: { success: true, message: 'OK', data: { ...waiter, role: 'Admin' } } }))
+    expect(await screen.findByText('Báo cáo doanh thu')).toBeTruthy()
+    expect(screen.queryByText('Không có quyền truy cập')).toBeNull()
   })
   it('keeps a failed session verification explicit and retryable instead of fabricating a user', async () => {
     sessionStorage.setItem('cafe.accessToken', 'unit-test-token')

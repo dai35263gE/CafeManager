@@ -4,6 +4,7 @@ import { remove, send } from '../api/client'
 import { useAction, useOptions, usePage } from '../api/hooks'
 import type { Ingredient, MenuItem, Recipe } from '../api/types'
 import { useAuth } from '../auth/AuthContext'
+import { allowed } from '../auth/permissions'
 import { PageTitle, QueryError } from '../components/Common'
 import { quantity } from '../utils/display'
 
@@ -11,7 +12,7 @@ interface RecipeForm { maMon: string; maNguyenLieu: string; soLuongSuDung: numbe
 
 export default function RecipesPage() {
   const { user } = useAuth()
-  const canManage = user?.role === 'Manager'
+  const canManage = allowed(user?.role, ['Manager'])
   const recipes = usePage<Recipe>('/dinh-luong', undefined, canManage)
   const menu = useOptions<MenuItem>('/mon', undefined, canManage)
   const ingredients = useOptions<Ingredient>('/nguyen-lieu', undefined, canManage)

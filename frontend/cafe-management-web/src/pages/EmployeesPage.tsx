@@ -4,6 +4,7 @@ import { send } from '../api/client'
 import { useAction, usePage, useResource } from '../api/hooks'
 import type { Employee, EmployeeStatus, User } from '../api/types'
 import { useAuth } from '../auth/AuthContext'
+import { allowed } from '../auth/permissions'
 import { PageTitle, QueryError } from '../components/Common'
 import { label, options } from '../utils/display'
 
@@ -21,7 +22,7 @@ function accountStatus(employee: Employee) {
 
 export default function EmployeesPage() {
   const { user } = useAuth()
-  const writable = user?.role === 'Manager'
+  const writable = allowed(user?.role, ['Manager'])
   const [status, setStatus] = useState<EmployeeStatus>()
   const [position, setPosition] = useState('')
   const list = usePage<Employee>('/nhan-vien', { status, position }, true)
@@ -168,7 +169,7 @@ export default function EmployeesPage() {
           <Input.Password maxLength={128} autoComplete="new-password" />
         </Form.Item>
         <Form.Item name="role" label="Vai trò" rules={[{ required: true }]}>
-          <Select options={options(['Waiter', 'Barista', 'Cashier', 'Warehouse', 'Manager'])} />
+          <Select options={options([...(user.role === 'Admin' ? ['Admin'] : []), 'Waiter', 'Barista', 'Cashier', 'Warehouse', 'Manager'])} />
         </Form.Item>
       </Form>
     </Modal>

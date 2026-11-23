@@ -104,6 +104,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJw
 });
 builder.Services.AddAuthorization(options => options.FallbackPolicy =
     new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build());
+builder.Services.AddSingleton<IAuthorizationHandler, AdminRoleAuthorizationHandler>();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {

@@ -15,7 +15,7 @@ interface PreviewForm { orderId: string; code: string }
 export default function PromotionsPage() {
   const { user } = useAuth()
   const canRead = allowed(user?.role, billing)
-  const manager = user?.role === 'Manager'
+  const manager = allowed(user?.role, ['Manager'])
   const [status, setStatus] = useState<string>()
   const list = usePage<Promotion>('/khuyen-mai', { status }, canRead)
   const [editing, setEditing] = useState<Promotion | null>()

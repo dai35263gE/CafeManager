@@ -1,12 +1,17 @@
 import { describe, expect, it } from 'vitest'
-import { allowed, billing, floor, kitchen, operations, stockWrite } from './permissions'
+import { allowed, billing, floor, kitchen, operations, stock, stockWrite } from './permissions'
 import { label, money, options, roles } from '../utils/display'
 
 describe('role permissions', () => {
   it('denies access when the role is unknown or not permitted', () => {
     expect(allowed(undefined, operations)).toBe(false)
     expect(allowed('Warehouse', operations)).toBe(false)
-    expect(allowed('Admin', operations)).toBe(false)
+    expect(allowed('Manager', ['Admin'])).toBe(false)
+  })
+
+  it('grants Admin every business capability and role-restricted area', () => {
+    for (const group of [operations, floor, kitchen, billing, stock, stockWrite, ...roles.map(role => [role])])
+      expect(allowed('Admin', group)).toBe(true)
   })
 
   it('keeps payment, floor, kitchen and stock-write capabilities separated', () => {
